@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:covid_track/animations/fade_in_animation.dart';
 import 'package:covid_track/models/provider.dart';
+import 'package:covid_track/screens/details_country-data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -20,6 +21,7 @@ class LiveReportScreen extends StatefulWidget {
 
 class _LiveReportScreenState extends State<LiveReportScreen> {
   bool _isInit = true;
+  bool _isLoading = true;
   @override
   void initState() {
     super.initState();
@@ -29,7 +31,11 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
   void didChangeDependencies() {
     if (_isInit) {
       final mData = Provider.of<MyData>(context, listen: false);
-      mData.fetchContriesData();
+      mData.fetchContriesData().then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -93,7 +99,8 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                     SizedBox(width: constraints.maxWidth * 0.06),
                     Consumer<MyData>(
                       builder: (context, data, child) => Text(
-                        DateFormat('EEE  MMM d, ''yyyy' '    ''h:mm a').format(DateTime.now()),
+                        DateFormat('EEE  MMM d, ' 'yyyy' '    ' 'h:mm a')
+                            .format(DateTime.now()),
                         style: GoogleFonts.lato(
                           color: Colors.green,
                           fontSize: 16.0,
@@ -110,7 +117,7 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
         Consumer<MyData>(builder: (context, data, child) {
           return Padding(
             padding: const EdgeInsets.only(top: kDefaultPadding * 6),
-            child: data.contriesData.isEmpty && !data.isRefresh
+            child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(
                       color: kPrimaryColor,
@@ -134,71 +141,85 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                                     horizontal: kDefaultPadding / 2),
                                 child: TranslateFadeAnimation(
                                   index: index,
-                                  child: Card(
-                                    color: kCardColor,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: kDefaultPadding / 1.5,
-                                              vertical: kDefaultPadding / 4),
-                                      leading: ClipRRect(
-                                        borderRadius: BorderRadius.circular(6),
-                                        child: Image.network(
-                                          data.contriesData[index]
-                                              ['countryInfo']['flag'],
-                                          height: constraints.maxHeight,
-                                          width: constraints.maxWidth * 0.18,
-                                          fit: BoxFit.fill,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).pushNamed(
+                                        CountryData.routeName,
+                                        arguments: {
+                                          "data": data.contriesData[index],
+                                        }
+                                      );
+                                    },
+                                    child: Card(
+                                      color: kCardColor,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal:
+                                                    kDefaultPadding / 1.5,
+                                                vertical: kDefaultPadding / 4),
+                                        leading: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          child: Hero(
+                                            tag: data.contriesData[index]['countryInfo']['flag'],
+                                            child: Image.network(
+                                              data.contriesData[index]['countryInfo']['flag'],
+                                              height: constraints.maxHeight,
+                                              width: constraints.maxWidth * 0.18,
+                                              fit: BoxFit.fill,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      title: Text(
-                                        data.contriesData[index]['country'],
-                                        style: GoogleFonts.lato(
-                                            color: kWhiteColor,
-                                            fontSize: 18.0,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Row(
-                                        children: [
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                  text: "Deaths",
-                                                ),
-                                                TextSpan(
-                                                  text:
-                                                      "  ${data.contriesData[index]['todayDeaths']}",
-                                                  style: GoogleFonts.lato(
-                                                      color: kPrimaryColor,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ],
+                                        title: Text(
+                                          data.contriesData[index]['country'],
+                                          style: GoogleFonts.lato(
+                                              color: kWhiteColor,
+                                              fontSize: 18.0,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        subtitle: Row(
+                                          children: [
+                                            RichText(
+                                              text: TextSpan(
+                                                children: [
+                                                  TextSpan(
+                                                    text: "Deaths",
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        "  ${data.contriesData[index]['todayDeaths']}",
+                                                    style: GoogleFonts.lato(
+                                                        color: kPrimaryColor,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(width: 20),
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                  text: "Recovered",
-                                                ),
-                                                TextSpan(
-                                                  text:
-                                                      "  ${((data.contriesData[index]['todayRecovered'] / data.contriesData[index]['recovered']) * 100).toStringAsFixed(2)}%",
-                                                  style: GoogleFonts.lato(
-                                                      color: Colors.green,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ],
+                                            SizedBox(width: 20),
+                                            RichText(
+                                              text: TextSpan(
+                                                children: [
+                                                  TextSpan(
+                                                    text: "Recovered",
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        "  ${((data.contriesData[index]['todayRecovered'] / data.contriesData[index]['recovered']) * 100).toStringAsFixed(2)}%",
+                                                    style: GoogleFonts.lato(
+                                                        color: Colors.green,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),

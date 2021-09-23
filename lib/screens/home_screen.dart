@@ -19,6 +19,7 @@ class MyHomeScreen extends StatefulWidget {
 
 class _MyHomeScreenState extends State<MyHomeScreen> {
   bool _isInit = true;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -29,7 +30,11 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
   void didChangeDependencies() async {
     final myData = Provider.of<MyData>(context, listen: false);
     if (_isInit) {
-      await myData.fetchContriesData();
+      myData.fetchContriesData().then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
       myData.fetchGlobalData();
       myData.fetchHistoricalDataAll();
     }
@@ -44,10 +49,12 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(
           vertical: kDefaultPadding, horizontal: kDefaultPadding / 1.5),
-      child: data.globalData.isEmpty
+      child: _isLoading
           ? Container(
               child: Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: kPrimaryColor,
+                ),
               ),
             )
           : ColumnAnimationStaggered(
@@ -82,8 +89,11 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                 ),
                 SizedBox(height: 20),
                 SizedBox(
-                  height: size.height * 0.32, // il faut adapter chart widget size height
-                  child: SimpleSeriesLegend(historicalData: data.historicalDataLastDays,),
+                  height: size.height *
+                      0.32, // il faut adapter chart widget size height
+                  child: SimpleSeriesLegend(
+                    historicalData: data.historicalDataLastDays,
+                  ),
                 ),
                 SizedBox(height: 20),
                 Text(
@@ -104,68 +114,73 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                         10,
                         (index) {
                           var _formatedNumber = NumberFormat.compact();
-                          return Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: kDefaultPadding,
-                                  horizontal: kDefaultPadding,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: kTextColor),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: Image.network(
-                                        data.getCountryOfDeathNumber(data
-                                                .getTopCountriesDeaths()[
-                                            index])[0]['countryInfo']['flag'],
-                                        height: 20,
-                                        width: 30,
-                                        fit: BoxFit.fitHeight,
-                                      ),
-                                    ),
-                                    SizedBox(height: 6),
-                                    Text(
-                                      data.getCountryOfDeathNumber(
-                                          data.getTopCountriesDeaths()[
-                                              index])[0]['country'],
-                                      style: GoogleFonts.lato(
-                                        color: kTextColor,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _formatedNumber.format(
-                                              data.getCountryOfDeathNumber(
-                                                  data.getTopCountriesDeaths()[
-                                                      index])[0]['deaths']),
-                                          style: GoogleFonts.lato(
-                                              color: kWhiteColor,
-                                              fontSize: 18.0,
-                                              fontWeight: FontWeight.bold),
+                          if (data.contriesData.isEmpty) {
+                            return Container();
+                          } else {
+                            return Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: kDefaultPadding,
+                                    horizontal: kDefaultPadding,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: kTextColor),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: Image.network(
+                                          data.getCountryOfDeathNumber(data
+                                                  .getTopCountriesDeaths()[
+                                              index])[0]['countryInfo']['flag'],
+                                          height: 20,
+                                          width: 30,
+                                          fit: BoxFit.fitHeight,
                                         ),
-                                        SizedBox(width: 6),
-                                        Icon(
-                                          FontAwesomeIcons.caretUp,
-                                          color: kPrimaryColor,
+                                      ),
+                                      SizedBox(height: 6),
+                                      Text(
+                                        data.getCountryOfDeathNumber(
+                                            data.getTopCountriesDeaths()[
+                                                index])[0]['country'],
+                                        style: GoogleFonts.lato(
+                                          color: kTextColor,
                                         ),
-                                      ],
-                                    ),
-                                  ],
+                                      ),
+                                      SizedBox(height: 8),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _formatedNumber.format(
+                                                data.getCountryOfDeathNumber(
+                                                    data.getTopCountriesDeaths()[
+                                                        index])[0]['deaths']),
+                                            style: GoogleFonts.lato(
+                                                color: kWhiteColor,
+                                                fontSize: 18.0,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          SizedBox(width: 6),
+                                          Icon(
+                                            FontAwesomeIcons.caretUp,
+                                            color: kPrimaryColor,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 20),
-                            ],
-                          );
+                                SizedBox(width: 20),
+                              ],
+                            );
+                          }
                         },
                       ),
                     ],
