@@ -4,6 +4,7 @@ import 'dart:convert';
 
 class MyData with ChangeNotifier {
   List<Map> _contriesData = [];
+  List<Map> _filtredCountriesData = [];
   bool _isRefresh = false;
 
   Map _glabalData = {};
@@ -15,6 +16,10 @@ class MyData with ChangeNotifier {
 
   List get contriesData {
     return [..._contriesData];
+  }
+
+  List get filtredCountriesData {
+    return [..._filtredCountriesData];
   }
 
   Map get globalData {
@@ -35,10 +40,23 @@ class MyData with ChangeNotifier {
         contries.add(data);
       });
       _contriesData = contries;
+      _filtredCountriesData = _contriesData;
       _isRefresh = false;
       notifyListeners();
     } catch (error) {
       throw error;
+    }
+  }
+
+  void fetchFiltredCountriesData(String text) {
+    if (text.isEmpty) {
+      _filtredCountriesData = _contriesData;
+      notifyListeners();
+    } else {
+      _filtredCountriesData = _contriesData
+          .where((countryData) => countryData['country'].toLowerCase().contains(text))
+          .toList();
+      notifyListeners();
     }
   }
 
@@ -59,8 +77,8 @@ class MyData with ChangeNotifier {
   }
 
   Future fetchHistoricalDataAll() async {
-    // print("historical");
-    var url = Uri.parse("https://disease.sh/v3/covid-19/historical/all?lastdays=6");
+    var url =
+        Uri.parse("https://disease.sh/v3/covid-19/historical/all?lastdays=6");
     try {
       var response = await http.get(url);
       Map<String, dynamic> loadedLastDaysOfWeekHistoricalData =

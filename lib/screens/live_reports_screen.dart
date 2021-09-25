@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:covid_track/animations/fade_in_animation.dart';
 import 'package:covid_track/models/provider.dart';
 import 'package:covid_track/screens/details_country-data.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -20,8 +21,11 @@ class LiveReportScreen extends StatefulWidget {
 }
 
 class _LiveReportScreenState extends State<LiveReportScreen> {
+  TextEditingController _searchInputController = TextEditingController();
+  FocusNode _searchNode = FocusNode();
   bool _isInit = true;
   bool _isLoading = true;
+  String _searchText = "";
   @override
   void initState() {
     super.initState();
@@ -75,9 +79,7 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                   ),
                 ],
               ),
-              SizedBox(
-                height: 30.0,
-              ),
+              SizedBox(height: 30.0),
               LayoutBuilder(
                 builder: (context, constraints) => Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -111,12 +113,55 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                   ],
                 ),
               ),
+              SizedBox(height: 20.0),
+              TextFormField(
+                focusNode: _searchNode,
+                controller: _searchInputController,
+                style: GoogleFonts.lato(
+                  color: kTextColor,
+                  // decoration: TextDecoration.none,
+                ),
+                cursorColor: kPrimaryColor,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  hintText: "Search",
+                  hintStyle: GoogleFonts.lato(
+                    color: kTextColor.withOpacity(0.5),
+                  ),
+                  prefixIcon: Icon(
+                    FontAwesomeIcons.search,
+                    color: kTextColor.withOpacity(0.8),
+                    size: 16.0,
+                  ),
+                  fillColor: kCardColor,
+                  border: InputBorder.none,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: kTextColor,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: kTextColor),
+                  ),
+                ),
+                onChanged: (txt) {
+                  print(txt);
+                  setState(() {
+                    _searchText = txt;
+                  });
+                  Provider.of<MyData>(context, listen: false)
+                      .fetchFiltredCountriesData(txt);
+                },
+              ),
             ],
           ),
         ),
         Consumer<MyData>(builder: (context, data, child) {
           return Padding(
-            padding: const EdgeInsets.only(top: kDefaultPadding * 6),
+            padding: const EdgeInsets.only(top: kDefaultPadding * 6 + 60),
             child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(
@@ -129,12 +174,12 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                       return Future.delayed(const Duration(seconds: 1), () {
                         print("refresh");
                         data.clearListCountries();
-                        data.fetchContriesData();
+                        data.fetchFiltredCountriesData(_searchText);
                       });
                     },
                     child: ListView.builder(
                         physics: BouncingScrollPhysics(),
-                        itemCount: data.contriesData.length,
+                        itemCount: data.filtredCountriesData.length,
                         itemBuilder: (context, index) => LayoutBuilder(
                               builder: (context, constraints) => Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -144,11 +189,11 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                                   child: GestureDetector(
                                     onTap: () {
                                       Navigator.of(context).pushNamed(
-                                        CountryData.routeName,
-                                        arguments: {
-                                          "data": data.contriesData[index],
-                                        }
-                                      );
+                                          CountryData.routeName,
+                                          arguments: {
+                                            "data": data
+                                                .filtredCountriesData[index],
+                                          });
                                     },
                                     child: Card(
                                       color: kCardColor,
@@ -165,17 +210,22 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                                           borderRadius:
                                               BorderRadius.circular(6),
                                           child: Hero(
-                                            tag: data.contriesData[index]['countryInfo']['flag'],
+                                            tag:
+                                                data.filtredCountriesData[index]
+                                                    ['countryInfo']['flag'],
                                             child: Image.network(
-                                              data.contriesData[index]['countryInfo']['flag'],
+                                              data.filtredCountriesData[index]
+                                                  ['countryInfo']['flag'],
                                               height: constraints.maxHeight,
-                                              width: constraints.maxWidth * 0.18,
+                                              width:
+                                                  constraints.maxWidth * 0.18,
                                               fit: BoxFit.fill,
                                             ),
                                           ),
                                         ),
                                         title: Text(
-                                          data.contriesData[index]['country'],
+                                          data.filtredCountriesData[index]
+                                              ['country'],
                                           style: GoogleFonts.lato(
                                               color: kWhiteColor,
                                               fontSize: 18.0,
@@ -191,7 +241,7 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                                                   ),
                                                   TextSpan(
                                                     text:
-                                                        "  ${data.contriesData[index]['todayDeaths']}",
+                                                        "  ${data.filtredCountriesData[index]['todayDeaths']}",
                                                     style: GoogleFonts.lato(
                                                         color: kPrimaryColor,
                                                         fontWeight:
@@ -209,7 +259,7 @@ class _LiveReportScreenState extends State<LiveReportScreen> {
                                                   ),
                                                   TextSpan(
                                                     text:
-                                                        "  ${((data.contriesData[index]['todayRecovered'] / data.contriesData[index]['recovered']) * 100).toStringAsFixed(2)}%",
+                                                        "  ${((data.filtredCountriesData[index]['todayRecovered'] / data.filtredCountriesData[index]['recovered']) * 100).toStringAsFixed(2)}%",
                                                     style: GoogleFonts.lato(
                                                         color: Colors.green,
                                                         fontWeight:

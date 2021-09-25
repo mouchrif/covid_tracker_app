@@ -29,6 +29,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    FocusScope.of(context).hasPrimaryFocus;
+    super.didChangeDependencies();
+  }
+
+  void _goToPage(int index) {
+    _pageController!.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 290),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
   void dispose() {
     _pageController!.dispose();
     super.dispose();
@@ -60,9 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _currentIndex = index;
           });
-          _pageController!.animateToPage(
-            index,
-            duration: const Duration(seconds: 1), curve: Curves.easeInOut);
+          _goToPage(index);
+          // _pageController!.animateToPage(index,
+          //     duration: const Duration(seconds: 1), curve: Curves.easeInOut);
         },
       ),
     );
